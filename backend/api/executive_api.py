@@ -4,9 +4,8 @@ from utils.db_connection import get_connection
 
 executive_bp = Blueprint("executive", __name__)
 
-# GET KPI EXECUTIVE
 @executive_bp.route("/kpi", methods=["GET"])
-@require_role(["EXECUTIVE"])           # <-- FIXED (role pakai nama)
+@require_role([1])  # ROLE EXECUTIVE
 def get_kpi_executive():
     try:
         conn = get_connection()
@@ -30,4 +29,4 @@ def get_kpi_executive():
         return jsonify({"success": True, "data": result})
 
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500

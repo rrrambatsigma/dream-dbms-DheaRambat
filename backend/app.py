@@ -23,19 +23,25 @@ app.config["JSON_SORT_KEYS"] = False
 
 
 # =====================================
-# GLOBAL CORS CONFIG (FIXED)
+# GLOBAL CORS FULL FIX
 # =====================================
 CORS(
     app,
-    resources={
-        r"/*": {
-            "origins": ["http://localhost:5173"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "supports_credentials": True,
-        }
-    }
+    origins=["http://localhost:5173"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    supports_credentials=True,
 )
+
+
+# =====================================
+# FIX: HANDLE PREFLIGHT OPTIONS SECARA GLOBAL
+# =====================================
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        return "", 200
 
 
 # =====================================
@@ -79,7 +85,7 @@ def login():
 
 
 # =====================================
-# ROOT TEST
+# TEST ROOT ROUTE
 # =====================================
 @app.get("/")
 def index():

@@ -2,51 +2,28 @@
   <div>
     <h1>Executive Dashboard</h1>
 
-    <div v-if="error" style="color:red;">
-      {{ error }}
-    </div>
+    <p>Selamat datang Executive!</p>
 
-    <div v-else-if="kpi">
-      <p>Total Shows: {{ kpi.TotalShows }}</p>
-      <p>Average Rating: {{ kpi.AverageRating }}</p>
-      <p>Total Votes: {{ kpi.TotalVotes }}</p>
-      <p>Total Production Companies: {{ kpi.TotalProductionCompanies }}</p>
-      <p>Total Production Countries: {{ kpi.TotalProductionCountries }}</p>
-      <p>Total Networks: {{ kpi.TotalNetworks }}</p>
-    </div>
+    <p style="color: gray; font-style: italic;">
+      (Endpoint KPI dinonaktifkan sementara)
+    </p>
 
-    <div v-else>
-      Loading...
-    </div>
+    <!-- Tambahkan konten dashboard di sini nanti -->
   </div>
 </template>
 
 <script>
-import api from "../utils/api.js";  // <-- harus .js agar Vite tidak error
-
 export default {
-  data() {
-    return {
-      kpi: null,
-      error: "",
-    };
-  },
-  async mounted() {
-    const token = localStorage.getItem("token");
+  name: "ExecDashboard",
 
-    try {
-      const res = await api.get("/executive/kpi", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      this.kpi = res.data.data;
-
-    } catch (err) {
-      this.error = "Gagal mengambil data. Akses ditolak.";
-      console.error("Dashboard error:", err);
-    }
+  mounted() {
+    console.log("Executive Dashboard loaded — KPI API disabled.");
   },
 };
 </script>
+
+<style scoped>
+h1 {
+  margin-bottom: 10px;
+}
+</style>

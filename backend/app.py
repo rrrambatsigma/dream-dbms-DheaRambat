@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import jwt
@@ -15,60 +14,89 @@ from api.native_api import native_api
 from api.executive_api import executive_bp
 from api.marketing_api import marketing_bp
 
-# ================================
-# FLASK APP
-# ================================
-app = Flask(__name__)
-CORS(app)   # ← FIX
 
-# ================================
+# =====================================
+# FLASK APP
+# =====================================
+app = Flask(__name__)
+app.config["JSON_SORT_KEYS"] = False
+
+
+# =====================================
+# GLOBAL CORS CONFIG (FIXED)
+# =====================================
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": ["http://localhost:5173"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "supports_credentials": True,
+        }
+    }
+)
+
+
+# =====================================
 # LOGIN ROUTE
-# ================================
+# =====================================
 @app.post("/login")
 def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
 
-    # Stored Procedure
-    query = "EXEC sp_Login ?, ?"
+        query = "EXEC sp_Login ?, ?"
+        user = execute_query_single(query, (username, password))
 
-    user = execute_query_single(query, (username, password))
+        if user is None:
+            return jsonify({"error": "Invalid username or password"}), 401
 
-    if user is None:
-        return jsonify({"error": "Invalid username or password"}), 401
+        token = jwt.encode(
+            {
+                "user_id": user["UserID"],
+                "username": user["Username"],
+                "role_id": user["RoleID"],
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=6),
+            },
+            SECRET_KEY,
+            algorithm="HS256",
+        )
 
-    token = jwt.encode({
-        "user_id": user["UserID"],
-        "username": user["Username"],
-        "role_id": user["RoleID"],
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=6)
-    }, SECRET_KEY, algorithm="HS256")
+        return jsonify(
+            {
+                "success": True,
+                "token": token,
+                "role_id": user["RoleID"],
+                "username": user["Username"],
+            }
+        )
 
-    return jsonify({
-        "success": True,
-        "token": token,
-        "role_id": user["RoleID"],
-        "username": user["Username"]
-    })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-# ================================
-# MAIN TEST ENDPOINT
-# ================================
+
+# =====================================
+# ROOT TEST
+# =====================================
 @app.get("/")
 def index():
-    return {"message": "Backend Flask is running!"}
+    return jsonify({"status": "Backend OK", "message": "Flask Running"})
 
-# ================================
+
+# =====================================
 # BLUEPRINT ROUTES
-# ================================
-app.register_blueprint(native_api, url_prefix="/native")
-app.register_blueprint(executive_bp, url_prefix="/executive")  # <── INI YANG BENAR
-app.register_blueprint(marketing_bp, url_prefix="/marketing")
+# =====================================
+app.register_blueprint(native_api, url_prefix="")
+app.register_blueprint(executive_bp, url_prefix="/api/executive")
+app.register_blueprint(marketing_bp, url_prefix="/api/marketing")
 
-# ================================
+
+# =====================================
 # RUN SERVER
-# ================================
-if __name__ == '__main__':
+# =====================================
+if __name__ == "__main__":
     print("🚀 Flask Running at http://127.0.0.1:5000")
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)

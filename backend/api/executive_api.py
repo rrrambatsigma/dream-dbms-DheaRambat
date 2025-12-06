@@ -5,8 +5,8 @@ from utils.db_connection import get_connection
 executive_bp = Blueprint("executive", __name__)
 
 # GET KPI EXECUTIVE
-@executive_bp.route("/kpi", methods=["GET"])   # <-- PERBAIKAN ROUTE
-@require_role([1])                             # <-- PERBAIKAN ROLE
+@executive_bp.route("/kpi", methods=["GET"])
+@require_role(["EXECUTIVE"])           # <-- FIXED (role pakai nama)
 def get_kpi_executive():
     try:
         conn = get_connection()

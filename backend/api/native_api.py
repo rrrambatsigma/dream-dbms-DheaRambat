@@ -464,5 +464,3 @@ def get_all_languages():
             "success": False,
             "error": str(e)
         }), 500
-
-

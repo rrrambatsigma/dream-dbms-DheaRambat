@@ -61,6 +61,23 @@ export const searchExecutiveTable = async (tableType, keyword) => {
 };
 
 // ======================================================
+// EXECUTIVE BAR CHART  ← BARU DITAMBAHKAN
+// ======================================================
+export const getExecutiveChart = async (chartType) => {
+  try {
+    const res = await api.get("/api/executive/chart", {
+      params: { type: chartType },
+    });
+
+    return res.data;
+
+  } catch (err) {
+    console.error(`Error fetching Executive Chart (${chartType}):`, err);
+    throw err;
+  }
+};
+
+// ======================================================
 // DEFAULT EXPORT AXIOS
 // ======================================================
 export default api;

@@ -5,7 +5,7 @@ from utils.db_connection import get_connection, execute_query_all
 executive_bp = Blueprint("executive", __name__)
 
 # ===============================================================
-# 1. KPI CARDS (JANGAN DIUBAH - SESUAI PUNYA KAMU)
+# 1. KPI CARDS (TIDAK DIUBAH)
 # ===============================================================
 @executive_bp.route("/kpi", methods=["GET"])
 @require_role([1])            # Role EXECUTIVE = 1
@@ -35,13 +35,11 @@ def get_kpi_executive():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-
 # ===============================================================
-# 2. EXECUTIVE TABLE (TAMPILKAN SEMUA DATA SESUAI DROPDOWN)
-# GET /api/executive/table?type=overview
+# 2. EXECUTIVE TABLE (Dropdown Table)
 # ===============================================================
 @executive_bp.route("/table", methods=["GET"])
-@require_role([1])  # Only Executive role
+@require_role([1])
 def get_executive_table():
     try:
         table_type = request.args.get("type")
@@ -87,11 +85,10 @@ def get_executive_table():
 
 
 # ===============================================================
-# 3. SEARCH ENGINE EXECUTIVE TABLE
-# GET /api/executive/table/search?type=overview&keyword=crime
+# 3. SEARCH ENGINE TABEL EXECUTIVE
 # ===============================================================
 @executive_bp.route("/table/search", methods=["GET"])
-@require_role([1])  # Executive only
+@require_role([1])
 def search_executive_table():
     try:
         table_type = request.args.get("type")
@@ -112,7 +109,6 @@ def search_executive_table():
         if table_type not in allowed_types:
             return jsonify({"success": False, "error": "Invalid table type"}), 400
 
-        # Jalankan SP Search
         query = """
             EXEC UserExecutive.sp_SearchExecutiveTableData 
                 @TableType = ?, 
@@ -121,11 +117,9 @@ def search_executive_table():
 
         rows = execute_query_all(query, (table_type, keyword))
 
-        # Jika SP mengembalikan error
         if len(rows) == 1 and "ErrorMessage" in rows[0]:
             return jsonify({"success": False, "error": rows[0]["ErrorMessage"]}), 400
 
-        # Ambil kolom
         columns = list(rows[0].keys()) if rows else []
 
         return jsonify({
@@ -135,6 +129,51 @@ def search_executive_table():
             "columns": columns,
             "rows": rows,
             "count": len(rows)
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+# ===============================================================
+# 4. 📊 BAR CHART DATA — TOP 15 (Production Country, Platform,
+#    Genre, Status)
+# ===============================================================
+@executive_bp.route("/chart", methods=["GET"])
+@require_role([1])   # executive only
+def get_chart_data():
+    try:
+        chart_type = request.args.get("type")
+
+        if not chart_type:
+            return jsonify({"success": False, "error": "Missing chart type"}), 400
+
+        allowed_types = ["country", "platform", "genre", "status"]
+
+        if chart_type not in allowed_types:
+            return jsonify({
+                "success": False,
+                "error": f"Invalid chart type. Must be one of: {allowed_types}"
+            }), 400
+
+        # Call stored procedure
+        query = "EXEC UserExecutive.sp_GetBarChart @ChartType = ?"
+        rows = execute_query_all(query, (chart_type,))
+
+        if not rows:
+            return jsonify({"success": False, "error": "No chart data found"}), 404
+
+        # Convert rows into Chart.js format
+        labels = [row["Label"] for row in rows]
+        totals = [row["Total"] for row in rows]
+
+        return jsonify({
+            "success": True,
+            "chart_type": chart_type,
+            "labels": labels,
+            "totals": totals,
+            "raw": rows
         })
 
     except Exception as e:

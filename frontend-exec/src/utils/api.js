@@ -13,4 +13,54 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// ======================================================
+// EXECUTIVE KPI
+// ======================================================
+export const getExecutiveKPI = async () => {
+  try {
+    const res = await api.get("/api/executive/kpi");
+    return res.data;
+  } catch (err) {
+    console.error("Error fetching Executive KPI:", err);
+    throw err;
+  }
+};
+
+// ======================================================
+// EXECUTIVE TABLE (Dropdown Table Data)
+// ======================================================
+export const getExecutiveTable = async (tableType) => {
+  try {
+    const res = await api.get("/api/executive/table", {
+      params: { type: tableType },
+    });
+
+    return res.data;
+
+  } catch (err) {
+    console.error(`Error fetching Executive Table (${tableType}):`, err);
+    throw err;
+  }
+};
+
+// ======================================================
+// EXECUTIVE TABLE SEARCH ENGINE
+// ======================================================
+export const searchExecutiveTable = async (tableType, keyword) => {
+  try {
+    const res = await api.get("/api/executive/table/search", {
+      params: { type: tableType, keyword },
+    });
+
+    return res.data;
+
+  } catch (err) {
+    console.error(`Error searching Executive Table:`, err);
+    throw err;
+  }
+};
+
+// ======================================================
+// DEFAULT EXPORT AXIOS
+// ======================================================
 export default api;

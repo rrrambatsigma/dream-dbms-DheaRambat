@@ -5,7 +5,7 @@ from utils.db_connection import execute_query_single
 marketing_bp = Blueprint("marketing", __name__)
 
 @marketing_bp.get("/marketing/kpi")
-@require_role(["MARKETING"])
+@require_role([2])   # Role MARKETING = 2
 def get_marketing_kpi():
     query = "SELECT * FROM v_kpi_marketing"
     result = execute_query_single(query)

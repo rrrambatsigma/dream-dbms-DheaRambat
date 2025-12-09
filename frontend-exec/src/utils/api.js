@@ -61,7 +61,7 @@ export const searchExecutiveTable = async (tableType, keyword) => {
 };
 
 // ======================================================
-// EXECUTIVE BAR CHART  ← BARU DITAMBAHKAN
+// EXECUTIVE BAR CHART
 // ======================================================
 export const getExecutiveChart = async (chartType) => {
   try {
@@ -73,6 +73,24 @@ export const getExecutiveChart = async (chartType) => {
 
   } catch (err) {
     console.error(`Error fetching Executive Chart (${chartType}):`, err);
+    throw err;
+  }
+};
+
+// ======================================================
+// EXECUTIVE PIE / DONUT CHART  🔥 (BARU)
+// ======================================================
+export const getExecutivePieChart = async (chartType) => {
+  try {
+    // endpoint backend: /api/executive/chart/pie?type=...
+    const res = await api.get("/api/executive/chart/pie", {
+      params: { type: chartType },
+    });
+
+    return res.data;
+
+  } catch (err) {
+    console.error(`Error fetching Executive Pie Chart (${chartType}):`, err);
     throw err;
   }
 };

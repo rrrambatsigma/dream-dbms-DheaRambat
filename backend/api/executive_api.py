@@ -137,8 +137,7 @@ def search_executive_table():
 
 
 # ===============================================================
-# 4. 📊 BAR CHART DATA — TOP 15 (Production Country, Platform,
-#    Genre, Status)
+# 4. 📊 BAR CHART — TOP 15
 # ===============================================================
 @executive_bp.route("/chart", methods=["GET"])
 @require_role([1])   # executive only
@@ -157,14 +156,12 @@ def get_chart_data():
                 "error": f"Invalid chart type. Must be one of: {allowed_types}"
             }), 400
 
-        # Call stored procedure
         query = "EXEC UserExecutive.sp_GetBarChart @ChartType = ?"
         rows = execute_query_all(query, (chart_type,))
 
         if not rows:
             return jsonify({"success": False, "error": "No chart data found"}), 404
 
-        # Convert rows into Chart.js format
         labels = [row["Label"] for row in rows]
         totals = [row["Total"] for row in rows]
 
@@ -174,6 +171,73 @@ def get_chart_data():
             "labels": labels,
             "totals": totals,
             "raw": rows
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+# ===============================================================
+# 5. 🍩 PIE / DONUT CHART — STATUS, GENRE, LANGUAGE, COUNTRY
+# ===============================================================
+@executive_bp.route("/chart/pie", methods=["GET"])
+@require_role([1])   # executive only
+def get_pie_chart():
+    try:
+        chart_type = request.args.get("type")
+
+        if not chart_type:
+            return jsonify({"success": False, "error": "Missing chart type"}), 400
+
+        allowed_types = ["status", "genre", "language", "country"]
+
+        if chart_type not in allowed_types:
+            return jsonify({
+                "success": False,
+            "error": f"Invalid chart type. Must be one of: {allowed_types}"
+            }), 400
+
+        query = "EXEC UserExecutive.sp_GetPieChart @ChartType = ?"
+        rows = execute_query_all(query, (chart_type,))
+
+        if not rows:
+            return jsonify({"success": False, "error": "No pie chart data found"}), 404
+
+        labels = [row["Label"] for row in rows]
+        totals = [row["Total"] for row in rows]
+
+        return jsonify({
+            "success": True,
+            "chart_type": chart_type,
+            "labels": labels,
+            "totals": totals,
+            "raw": rows
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+# ===============================================================
+# 6. 📊 STACKED BAR CHART — SHOW PER GENRE PER TYPE
+# ===============================================================
+@executive_bp.route("/chart/stacked", methods=["GET"])
+@require_role([1])
+def get_stacked_chart():
+    try:
+        query = "EXEC UserExecutive.sp_GetStackedBarChart"
+        rows = execute_query_all(query)
+
+        if not rows:
+            return jsonify({"success": False, "error": "No stacked chart data found"}), 404
+
+        # Format:
+        # Genre | Type | TotalShows
+        return jsonify({
+            "success": True,
+            "data": rows
         })
 
     except Exception as e:

@@ -83,7 +83,6 @@ def get_executive_table():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-
 # ===============================================================
 # 3. SEARCH ENGINE TABEL EXECUTIVE
 # ===============================================================
@@ -135,7 +134,6 @@ def search_executive_table():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-
 # ===============================================================
 # 4. 📊 BAR CHART — TOP 15
 # ===============================================================
@@ -177,7 +175,6 @@ def get_chart_data():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-
 # ===============================================================
 # 5. 🍩 PIE / DONUT CHART — STATUS, GENRE, LANGUAGE, COUNTRY
 # ===============================================================
@@ -195,7 +192,7 @@ def get_pie_chart():
         if chart_type not in allowed_types:
             return jsonify({
                 "success": False,
-            "error": f"Invalid chart type. Must be one of: {allowed_types}"
+                "error": f"Invalid chart type. Must be one of: {allowed_types}"
             }), 400
 
         query = "EXEC UserExecutive.sp_GetPieChart @ChartType = ?"
@@ -219,7 +216,6 @@ def get_pie_chart():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-
 # ===============================================================
 # 6. 📊 STACKED BAR CHART — SHOW PER GENRE PER TYPE
 # ===============================================================
@@ -227,17 +223,43 @@ def get_pie_chart():
 @require_role([1])
 def get_stacked_chart():
     try:
-        query = "EXEC UserExecutive.sp_GetStackedBarChart"
-        rows = execute_query_all(query)
+        # Call Stored Procedure
+        rows = execute_query_all("EXEC UserExecutive.sp_GetStackedBarChart")
 
         if not rows:
             return jsonify({"success": False, "error": "No stacked chart data found"}), 404
 
-        # Format:
-        # Genre | Type | TotalShows
+        # rows example:
+        # { "Genre": "Drama", "Type": "Scripted", "TotalShows": 120 }
+
+        # Kumpulkan semua Genre (jadi labels X-axis)
+        genres = sorted(list({row["Genre"] for row in rows}))
+
+        # Kumpulkan semua Type (jadi setiap stack di bar)
+        types = sorted(list({row["Type"] for row in rows}))
+
+        # Bentuk datasets untuk Chart.js
+        datasets = []
+        for type_name in types:
+            data_values = []
+            for genre in genres:
+                match = next(
+                    (item for item in rows
+                     if item["Genre"] == genre and item["Type"] == type_name),
+                    None
+                )
+                data_values.append(match["TotalShows"] if match else 0)
+
+            datasets.append({
+                "label": type_name,
+                "data": data_values
+            })
+
         return jsonify({
             "success": True,
-            "data": rows
+            "labels": genres,     # X-axis labels
+            "datasets": datasets, # stacked data per type
+            "raw": rows           # raw data kalau mau debug
         })
 
     except Exception as e:

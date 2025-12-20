@@ -95,7 +95,7 @@ export const getExecutivePieChart = async (chartType) => {
 };
 
 // ======================================================
-// EXECUTIVE STACKED BAR CHART  🔥 (BARU DITAMBAHKAN)
+// EXECUTIVE STACKED BAR CHART
 // ======================================================
 export const getExecutiveStackedChart = async () => {
   try {
@@ -105,6 +105,26 @@ export const getExecutiveStackedChart = async () => {
 
   } catch (err) {
     console.error("Error fetching Executive Stacked Bar Chart:", err);
+    throw err;
+  }
+};
+
+// ======================================================
+// EXECUTIVE SCATTER PLOT  🔥 (BARU DITAMBAHKAN)
+// ======================================================
+export const getExecutiveScatterChart = async (scatterType, filters = {}) => {
+  try {
+    const res = await api.get("/api/executive/chart/scatter", {
+      params: {
+        type: scatterType,   // wajib
+        ...filters           // optional: genre, status, typeName, yearFrom, yearTo
+      }
+    });
+
+    return res.data;
+
+  } catch (err) {
+    console.error(`Error fetching Executive Scatter Chart (${scatterType}):`, err);
     throw err;
   }
 };

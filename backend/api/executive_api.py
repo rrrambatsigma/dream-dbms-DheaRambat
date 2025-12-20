@@ -176,10 +176,10 @@ def get_chart_data():
 
 
 # ===============================================================
-# 5. 🍩 PIE / DONUT CHART — STATUS, GENRE, LANGUAGE, COUNTRY
+# 5. 🍩 PIE / DONUT CHART
 # ===============================================================
 @executive_bp.route("/chart/pie", methods=["GET"])
-@require_role([1])   # executive only
+@require_role([1])
 def get_pie_chart():
     try:
         chart_type = request.args.get("type")
@@ -217,28 +217,20 @@ def get_pie_chart():
 
 
 # ===============================================================
-# 6. 📊 STACKED BAR CHART — SHOW PER GENRE PER TYPE
+# 6. 📊 STACKED BAR CHART
 # ===============================================================
 @executive_bp.route("/chart/stacked", methods=["GET"])
 @require_role([1])
 def get_stacked_chart():
     try:
-        # Call Stored Procedure
         rows = execute_query_all("EXEC UserExecutive.sp_GetStackedBarChart")
 
         if not rows:
             return jsonify({"success": False, "error": "No stacked chart data found"}), 404
 
-        # rows example:
-        # { "Genre": "Drama", "Type": "Scripted", "TotalShows": 120 }
-
-        # Kumpulkan semua Genre (jadi labels X-axis)
         genres = sorted(list({row["Genre"] for row in rows}))
-
-        # Kumpulkan semua Type (jadi setiap stack di bar)
         types = sorted(list({row["Type"] for row in rows}))
 
-        # Bentuk datasets untuk Chart.js
         datasets = []
         for type_name in types:
             data_values = []
@@ -257,9 +249,140 @@ def get_stacked_chart():
 
         return jsonify({
             "success": True,
-            "labels": genres,     # X-axis labels
-            "datasets": datasets, # stacked data per type
-            "raw": rows           # raw data kalau mau debug
+            "labels": genres,
+            "datasets": datasets,
+            "raw": rows
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ===============================================================
+# 7. ⭐ SCATTER PLOT
+# ===============================================================
+@executive_bp.route("/chart/scatter", methods=["GET"])
+@require_role([1])
+def get_scatter_plot():
+    try:
+        scatter_type = request.args.get("type")
+
+        if not scatter_type:
+            return jsonify({"success": False, "error": "Missing scatter type"}), 400
+
+        allowed = [
+            "popularity_vs_votes",
+            "popularity_vs_rating",
+            "votes_vs_rating"
+        ]
+
+        if scatter_type not in allowed:
+            return jsonify({
+                "success": False,
+                "error": f"Invalid scatter type. Must be one of: {allowed}"
+            }), 400
+
+        genre = request.args.get("genre")
+        type_name = request.args.get("typeName")
+        status = request.args.get("status")
+        year_from = request.args.get("yearFrom")
+        year_to = request.args.get("yearTo")
+
+        query = """
+            EXEC UserExecutive.sp_GetScatterPlot 
+                @ScatterType = ?, 
+                @GenreName = ?, 
+                @TypeName = ?, 
+                @StatusName = ?, 
+                @StartYearFrom = ?, 
+                @StartYearTo = ?
+        """
+
+        rows = execute_query_all(query, (
+            scatter_type,
+            genre,
+            type_name,
+            status,
+            year_from,
+            year_to
+        ))
+
+        if not rows:
+            return jsonify({"success": False, "error": "No scatter data found"}), 404
+
+        return jsonify({
+            "success": True,
+            "scatter_type": scatter_type,
+            "data": rows
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ===============================================================
+# 8. 📈 LINE CHART — TIME SERIES (DROPDOWN BASED)
+# ===============================================================
+@executive_bp.route("/chart/line", methods=["GET"])
+@require_role([1])
+def get_line_chart():
+    try:
+        chart_type = request.args.get("type")
+        start_year = request.args.get("startYear")
+        end_year = request.args.get("endYear")
+
+        if not chart_type:
+            return jsonify({"success": False, "error": "Missing chart type"}), 400
+
+        allowed_types = ["popularity", "rating", "shows", "countries"]
+
+        if chart_type not in allowed_types:
+            return jsonify({
+                "success": False,
+                "error": f"Invalid chart type. Must be one of: {allowed_types}"
+            }), 400
+
+        query = """
+            EXEC UserExecutive.sp_GetLineChart
+                @ChartType = ?,
+                @StartYear = ?,
+                @EndYear   = ?
+        """
+
+        rows = execute_query_all(query, (
+            chart_type,
+            start_year,
+            end_year
+        ))
+
+        if not rows:
+            return jsonify({"success": False, "error": "No line chart data found"}), 404
+
+        years = [row["Year"] for row in rows]
+
+        if chart_type == "popularity":
+            values = [float(row["AvgPopularity"]) for row in rows]
+            metric = "AvgPopularity"
+
+        elif chart_type == "rating":
+            values = [float(row["AvgRating"]) for row in rows]
+            metric = "AvgRating"
+
+        elif chart_type == "shows":
+            values = [row["TotalShows"] for row in rows]
+            metric = "TotalShows"
+
+        else:  # countries
+            values = [row["TotalProductionCountries"] for row in rows]
+            metric = "TotalProductionCountries"
+
+        return jsonify({
+            "success": True,
+            "chart_type": chart_type,
+            "metric": metric,
+            "labels": years,
+            "data": values,
+            "raw": rows
         })
 
     except Exception as e:

@@ -15,6 +15,11 @@
       v-if="activeTab === 'movies'"
       @show-detail="openDetailModal"
     />
+    
+    <!-- TAMBAHKAN ABOUTVIEW -->
+    <AboutView 
+      v-if="activeTab === 'about'"
+    />
 
     <DetailModal 
       v-if="showDetailModal"
@@ -28,6 +33,7 @@
 import HeaderNavigation from './componentsweb/common/HeaderNavigation.vue'
 import HomeView from './views/native/HomeView.vue'
 import MoviesView from './views/native/MoviesView.vue'
+import AboutView from './componentsweb/common/AboutView.vue' // IMPORT
 import DetailModal from './componentsweb/native/DetailModal.vue'
 
 export default {
@@ -36,6 +42,7 @@ export default {
     HeaderNavigation,
     HomeView,
     MoviesView,
+    AboutView, // REGISTER
     DetailModal
   },
   data() {
@@ -47,12 +54,17 @@ export default {
   },
   methods: {
     setActiveTab(tab) {
+      console.log('Switching to tab:', tab)
       this.activeTab = tab
     },
     handleQuickSearch(keyword) {
-      // Forward quick search to appropriate component
-      if (this.activeTab === 'home') {
-        this.$refs.homeView?.handleQuickSearch?.(keyword)
+      if (keyword && keyword.trim()) {
+        window.dispatchEvent(new CustomEvent('global-quick-search', { 
+          detail: { 
+            keyword: keyword.trim(),
+            activeTab: this.activeTab
+          }
+        }))
       }
     },
     openDetailModal(showId) {
@@ -63,12 +75,15 @@ export default {
       this.showDetailModal = false
       this.selectedShowId = null
     }
+  },
+  mounted() {
+    console.log('App mounted - AboutView available:', !!this.$options.components.AboutView)
   }
 }
 </script>
 
 <style>
-/* Global styles */
+/* CSS TETAP SAMA */
 * {
   margin: 0;
   padding: 0;

@@ -29,7 +29,14 @@
           />
           <span class="search-icon">🔍</span>
         </div>
-        <button class="nav-btn">About</button>
+        <!-- Tombol About pindah ke halaman About -->
+        <button 
+          class="nav-btn" 
+          @click="$emit('tab-change', 'about')"
+          :class="{ active: activeTab === 'about' }"
+        >
+          About
+        </button>
       </div>
     </div>
   </header>
@@ -49,8 +56,8 @@ export default {
       quickSearch: '',
       tabs: [
         { id: 'home', name: 'Home' },
-        { id: 'movies', name: 'Movies' },
-        { id: 'celebs', name: 'Celebs' }
+        { id: 'movies', name: 'Movies' }
+        // HAPUS TAB ABOUT DARI SINI
       ]
     }
   },
@@ -58,16 +65,27 @@ export default {
     performQuickSearch() {
       const kw = this.quickSearch && this.quickSearch.trim()
       if (!kw) return
-      // emit ke parent (tetap) dan dispatch ke window supaya SearchSection menangkapnya
       this.$emit('quick-search', kw)
       window.dispatchEvent(new CustomEvent('quick-search', { detail: kw }))
-      // jangan kosongkan quickSearch supaya teks di input tidak hilang
     }
   }
 }
 </script>
 
 <style scoped>
+/* TAMBAHKAN INI UNTUK TOMBOL ABOUT AKTIF */
+.nav-btn.active {
+  background: linear-gradient(135deg, 
+    rgba(152, 57, 68, 0.3) 0%, 
+    rgba(177, 79, 29, 0.3) 100%);
+  border-color: rgba(152, 57, 68, 0.8);
+  color: #f8f4ed;
+  box-shadow: 
+    0 4px 15px rgba(152, 57, 68, 0.4),
+    0 0 15px rgba(152, 57, 68, 0.3);
+}
+
+/* CSS LAINNYA TETAP SAMA SEPERTI DI ATAS */
 .header-nav {
   background: 
     linear-gradient(135deg, 

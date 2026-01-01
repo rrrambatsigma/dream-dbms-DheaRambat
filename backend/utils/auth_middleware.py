@@ -1,53 +1,79 @@
+# ====================================================
+# utils/auth_middleware.py
+# ====================================================
+
 import functools
 from flask import request, jsonify
 import jwt
 from config import SECRET_KEY
-from utils.db_connection import execute_query_single
+
 
 def require_role(allowed_roles):
+    """
+    Decorator untuk role-based authorization.
+    Role diambil LANGSUNG dari JWT token (role_id).
+    """
 
-    def wrapper(func):
+    def decorator(func):
         @functools.wraps(func)
-        def decorated(*args, **kwargs):
+        def wrapper(*args, **kwargs):
 
+            # ------------------------------------------------
+            # 1. Ambil Authorization Header
+            # ------------------------------------------------
             auth_header = request.headers.get("Authorization")
 
-            if not auth_header:
-                return jsonify({"error": "Authorization header missing"}), 401
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({
+                    "success": False,
+                    "message": "Authorization token missing"
+                }), 401
 
+            # ------------------------------------------------
+            # 2. Decode JWT Token
+            # ------------------------------------------------
             try:
                 token = auth_header.replace("Bearer ", "").strip()
-                payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                payload = jwt.decode(
+                    token,
+                    SECRET_KEY,
+                    algorithms=["HS256"]
+                )
             except jwt.ExpiredSignatureError:
-                return jsonify({"error": "Token expired"}), 401
-            except jwt.InvalidTokenError:
-                return jsonify({"error": "Invalid token"}), 401
-
-            username = payload.get("username")
-
-            if not username:
-                return jsonify({"error": "Invalid token payload"}), 401
-
-            # ⬅⬅ AMBIL ROLE_ID, BUKAN ROLENAME
-            sql = """
-                SELECT u.RoleID
-                FROM Users u
-                WHERE u.Username = ?
-            """
-            result = execute_query_single(sql, (username,))
-
-            if not result:
-                return jsonify({"error": "User not found"}), 404
-
-            user_role = result["RoleID"]   # ⬅ ROLE ANGKA
-
-            # ⬅ CEK ROLE ANGKA
-            if user_role not in allowed_roles:
                 return jsonify({
-                    "error": f"Access denied for role_id {user_role}"
+                    "success": False,
+                    "message": "Token expired"
+                }), 401
+            except jwt.InvalidTokenError:
+                return jsonify({
+                    "success": False,
+                    "message": "Invalid token"
+                }), 401
+
+            # ------------------------------------------------
+            # 3. Ambil Role dari Token
+            # ------------------------------------------------
+            role_id = payload.get("role_id")
+
+            if role_id is None:
+                return jsonify({
+                    "success": False,
+                    "message": "Role not found in token"
                 }), 403
 
+            # ------------------------------------------------
+            # 4. Validasi Role
+            # ------------------------------------------------
+            if role_id not in allowed_roles:
+                return jsonify({
+                    "success": False,
+                    "message": "Access denied"
+                }), 403
+
+            # ------------------------------------------------
+            # 5. Lolos Authorization
+            # ------------------------------------------------
             return func(*args, **kwargs)
 
-        return decorated
-    return wrapper
+        return wrapper
+    return decorator

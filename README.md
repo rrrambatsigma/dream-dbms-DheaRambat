@@ -1,4 +1,3 @@
-Berikut **deskripsi README.md** yang sudah disesuaikan dengan isi laporan proyek *DREAM Entertainment* kamu . Kamu bisa langsung simpan sebagai `README.md` di root repository GitHub-mu.
 
 ---
 

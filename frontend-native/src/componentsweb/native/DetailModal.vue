@@ -121,26 +121,38 @@ export default {
   },
   methods: {
     async loadShowDetail() {
-      this.selectedShow = null;
-      this.detailLoading = true;
-      this.detailError = null;
+  this.selectedShow = null;
+  this.detailLoading = true;
+  this.detailError = null;
 
-      try {
-        const response = await fetch(`http://127.0.0.1:5000/api/native/search/detail/${this.showId}`);
-        const data = await response.json();
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:5000/api/native/detail/${this.showId}`
+    );
+    const data = await response.json();
 
-        if (data.success) {
-          this.selectedShow = data.detail;
-        } else {
-          this.detailError = data.error || 'Failed to load show details';
-        }
-      } catch (err) {
-        this.detailError = 'Network error: ' + err.message;
-        console.error('Detail error:', err);
-      } finally {
-        this.detailLoading = false;
-      }
-    },
+    if (!data.success) {
+      this.detailError = data.error || "Failed to load show details";
+      return;
+    }
+
+    // 🔥 BACKEND RETURN ARRAY
+    const showInfo = data.data?.show_info?.[0];
+
+    if (!showInfo) {
+      this.detailError = "Show detail not found";
+      return;
+    }
+
+    this.selectedShow = showInfo;
+
+  } catch (err) {
+    this.detailError = "Network error: " + err.message;
+    console.error("Detail error:", err);
+  } finally {
+    this.detailLoading = false;
+  }
+},
     formatYear(dateStr) {
       if (!dateStr) return 'N/A';
       try {

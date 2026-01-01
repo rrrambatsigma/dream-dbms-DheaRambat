@@ -3,7 +3,7 @@
     <!-- Marketing Portal Title tanpa kotak -->
     <div class="title-container">
       <h1 class="main-title-login">Marketing Portal</h1>
-      <p class="subtitle-login">Find Your Story - Content Management System</p>
+      <p class="subtitle-login">Find Your Story – Content Management System</p>
     </div>
 
     <!-- Login Form -->
@@ -20,7 +20,7 @@
           <p class="login-subtitle">Enter your credentials to access the marketing dashboard</p>
         </div>
 
-        <form @submit.prevent="login" class="login-form">
+        <form @submit.prevent="handleLogin" class="login-form">
           <div class="input-group">
             <label for="username" class="input-label">
               <i class="icon-user"></i>
@@ -93,54 +93,63 @@
 
 <script>
 export default {
-  name: 'MarketingLogin',
+  name: "MarketingLoginPage",
   data() {
     return {
       username: "",
       password: "",
-      errorMessage: "",
-      loading: false
+      loading: false,
+      errorMessage: ""
     };
   },
   methods: {
-    async login() {
-      // Reset error message
+    async handleLogin() {
       this.errorMessage = "";
       this.loading = true;
 
       try {
-        const response = await fetch("http://localhost:5000/login", {
+        const response = await fetch("http://127.0.0.1:5000/login", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
             username: this.username,
             password: this.password
-          }),
+          })
         });
 
         const data = await response.json();
 
-        if (!data.success) {
-          this.errorMessage = data.message || data.error || "Login failed";
+        // ❌ Login gagal
+        if (!response.ok || !data.success) {
+          this.errorMessage =
+            data.message || data.error || "Login failed";
           return;
         }
 
-        // Save token
+        // ✅ Simpan token & role
         localStorage.setItem("token", data.token);
-        localStorage.setItem("role_id", data.role_id);
+        localStorage.setItem(
+          "role_id",
+          String(data.user.role_id)
+        );
 
-        // Check marketing role
-        if (data.role_id !== 2) {
-          this.errorMessage = "Access denied. Marketing team members only.";
+        // ❌ Bukan marketing
+        if (data.user.role_id !== 2) {
+          localStorage.clear();
+          this.errorMessage =
+            "Access denied. Marketing team members only.";
           return;
         }
 
-        // Redirect to marketing dashboard
-        this.$router.push("/marketing/dashboard");
+        // ✅ Redirect ke dashboard
+        this.$router.push("/marketing-dashboard");
 
       } catch (error) {
-        console.error("Login error:", error);
-        this.errorMessage = "Connection error. Please try again.";
+        console.error(error);
+        this.errorMessage =
+          "Cannot connect to server. Please try again.";
       } finally {
         this.loading = false;
       }
@@ -379,9 +388,24 @@ export default {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.input-label::before {
+/* Icon styles */
+.icon-user,
+.icon-lock,
+.icon-error,
+.icon-info {
   font-family: 'Material Icons';
   font-size: 18px;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .icon-user::before {
@@ -724,4 +748,10 @@ export default {
     transform: translateY(-4px);
   }
 }
+
+/* Tambahkan font Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+/* Tambahkan Material Icons */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 </style>

@@ -4,7 +4,7 @@ import urllib
 # Buat string koneksi untuk SQL Server menggunakan Windows Authentication
 connection_string = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=DESKTOP-IKTCBU6;"         # <- nama server kamu
+    "SERVER=RAMBATUNGU25;"         # <- nama server kamu
     "DATABASE=FINAL_PROJECT;"      # <- nama database kamu
     "Trusted_Connection=yes;"      # <- Windows Authentication
 )

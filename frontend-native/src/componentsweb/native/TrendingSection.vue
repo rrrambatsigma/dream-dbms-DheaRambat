@@ -69,17 +69,24 @@ export default {
     this.loadTrending();
   },
   methods: {
-    async loadTrending() {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/api/native/top-trending');
-        const data = await response.json();
-        this.trendingShows = data.slice(0, 10);
-      } catch (err) {
-        console.error('Error loading trending:', err);
-      } finally {
-        this.trendingLoading = false;
-      }
-    },
+async loadTrending() {
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/native/top-trending');
+    const payload = await response.json();
+
+    // ✅ AMAN & SESUAI RESPONSE BACKEND
+    this.trendingShows = Array.isArray(payload.data)
+      ? payload.data.slice(0, 10)
+      : [];
+
+    console.log('Trending loaded:', this.trendingShows);
+  } catch (err) {
+    console.error('Error loading trending:', err);
+    this.trendingShows = [];
+  } finally {
+    this.trendingLoading = false;
+  }
+},
     formatYear(dateStr) {
       if (!dateStr) return 'N/A';
       try {

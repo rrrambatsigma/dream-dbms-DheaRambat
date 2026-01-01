@@ -7,7 +7,3 @@ export default {
   name: "App",
 };
 </script>
-
-<style>
-/* biarkan kosong / sesuaikan nanti */
-</style>
